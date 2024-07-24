@@ -532,7 +532,7 @@ def raytrace(shotx,recx,ray,x,a1,b1,c1,d1,a2,b2,c2,d2,xx0,vv,vv1,vv0,vv01):
     yy=torch.linspace(shotx, recx,len(ray))
     x1=yy[1:len(ray)-1]
     x0,f,t,y,g,p,uu=myopt(x1,shotx,recx,x,a1,b1,c1,d1,vv,vv1,ray)    
-    if  any(t<=0) or min(abs(f))>1.e0: return 0.,torch.zeros(len(xx0)),f,uu,t,g,p,0,0,0,0 
+    if  any(t<=0) or (len(f)>0 and min(abs(x) for x in f) > 1.e0): return 0.,torch.zeros(len(xx0)),f,uu,t,g,p,0,0,0,0 
 
     f,t0,y,g,p=ratios(x0,shotx,recx,x,a2,b2,c2,d2,vv0,vv01,ray)
     gg=torch.zeros(len(f),len(x0))
@@ -557,7 +557,11 @@ def raytrace(shotx,recx,ray,x,a1,b1,c1,d1,a2,b2,c2,d2,xx0,vv,vv1,vv0,vv01):
         else:
             h0[i]=np
     
-    gt=gg.transpose(0,1)@gg;II=torch.eye(len(x0));damp=torch.max(abs(gt));
+    gt=gg.transpose(0,1)@gg;II=torch.eye(len(x0));
+    if len(gt)==0:
+        damp=1.e-8;
+    else: 
+        damp=torch.max(abs(gt));
     dgdh=-torch.linalg.solve(gt+damp*1.e-8*II,gg.transpose(0,1)@hh)
     #gdh=-torch.linalg.solve(gg,hh)
     dtdh=torch.mm(g0,dgdh)+h0;
@@ -700,7 +704,7 @@ def alltimes(xx,shotx,recx,vp,vpflag,vp0,vpflag1,vs,vsflag,vs0,vsflag1,x,y,flag,
 torch.autograd.set_detect_anomaly(False)
 torch.set_default_tensor_type(torch.DoubleTensor)
 
-shotx,recx,vp,vpflag,vp0,vpflag1,vs,vsflag,vs0,vsflag1,x,y,flag,ray,pors,t0=readtimes("tomo3d.txt",0.0,1)
+shotx,recx,vp,vpflag,vp0,vpflag1,vs,vsflag,vs0,vsflag1,x,y,flag,ray,pors,t0=readtimes("good123.txt",0.0,1)
 #writetomoxyz(x[1:],y[1:],150,150,vp[1:],vp0[1:],vs[1:],vs0[1:],[1000,2400,2900,3382][1:],[1000,2700,3000,3387][1:])
 #writetomoxyz(x[1:],y[1:],50,50,vp[1:],vp0[1:],vs[1:],vs0[1:],[1000,2900,3382][1:],[1000,3000,3387][1:])
 # for i in range(len(vp)):
